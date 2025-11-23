@@ -1,0 +1,247 @@
+version: '3.8'
+
+services:
+  # Scheduler node 1 (bootstrap leader)
+  scheduler1:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: scheduler1
+    hostname: scheduler1
+    ports:
+      - "8001:8001"  # HTTP API
+      - "9001:9001"  # Raft
+      - "7001:7001"  # gRPC
+    environment:
+      - NODE_ID=scheduler1
+      - HTTP_ADDR=:8001
+      - RAFT_ADDR=:9001
+      - GRPC_ADDR=:7001
+      - BOOTSTRAP=true
+    command:
+      - --node-id=scheduler1
+      - --http-addr=:8001
+      - --raft-addr=:9001
+      - --grpc-addr=:7001
+      - --data-dir=/app/data
+      - --bootstrap=true
+      - --log-level=info
+      - --log-format=console
+    volumes:
+      - scheduler1-data:/app/data
+    networks:
+      - scheduler-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Scheduler node 2
+  scheduler2:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: scheduler2
+    hostname: scheduler2
+    ports:
+      - "8002:8002"
+      - "9002:9002"
+      - "7002:7002"
+    environment:
+      - NODE_ID=scheduler2
+      - HTTP_ADDR=:8002
+      - RAFT_ADDR=:9002
+      - GRPC_ADDR=:7002
+    command:
+      - --node-id=scheduler2
+      - --http-addr=:8002
+      - --raft-addr=:9002
+      - --grpc-addr=:7002
+      - --data-dir=/app/data
+      - --join=scheduler1:9001
+      - --log-level=info
+      - --log-format=console
+    volumes:
+      - scheduler2-data:/app/data
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Scheduler node 3
+  scheduler3:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    container_name: scheduler3
+    hostname: scheduler3
+    ports:
+      - "8003:8003"
+      - "9003:9003"
+      - "7003:7003"
+    environment:
+      - NODE_ID=scheduler3
+      - HTTP_ADDR=:8003
+      - RAFT_ADDR=:9003
+      - GRPC_ADDR=:7003
+    command:
+      - --node-id=scheduler3
+      - --http-addr=:8003
+      - --raft-addr=:9003
+      - --grpc-addr=:7003
+      - --data-dir=/app/data
+      - --join=scheduler1:9001
+      - --log-level=info
+      - --log-format=console
+    volumes:
+      - scheduler3-data:/app/data
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Worker nodes
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: worker1
+    hostname: worker1
+    environment:
+      - WORKER_ID=worker1
+      - SCHEDULER_ADDR=scheduler1:7001
+    command:
+      - --worker-id=worker1
+      - --scheduler=scheduler1:7001
+      - --max-concurrency=4
+      - --log-level=info
+      - --log-format=console
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+    restart: unless-stopped
+
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: worker2
+    hostname: worker2
+    environment:
+      - WORKER_ID=worker2
+      - SCHEDULER_ADDR=scheduler1:7001
+    command:
+      - --worker-id=worker2
+      - --scheduler=scheduler1:7001
+      - --max-concurrency=4
+      - --log-level=info
+      - --log-format=console
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+    restart: unless-stopped
+
+  worker3:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: worker3
+    hostname: worker3
+    environment:
+      - WORKER_ID=worker3
+      - SCHEDULER_ADDR=scheduler1:7001
+    command:
+      - --worker-id=worker3
+      - --scheduler=scheduler1:7001
+      - --max-concurrency=4
+      - --log-level=info
+      - --log-format=console
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+    restart: unless-stopped
+
+  worker4:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: worker4
+    hostname: worker4
+    environment:
+      - WORKER_ID=worker4
+      - SCHEDULER_ADDR=scheduler2:7002
+    command:
+      - --worker-id=worker4
+      - --scheduler=scheduler2:7002
+      - --max-concurrency=4
+      - --log-level=info
+      - --log-format=console
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler2
+    restart: unless-stopped
+
+  worker5:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: worker5
+    hostname: worker5
+    environment:
+      - WORKER_ID=worker5
+      - SCHEDULER_ADDR=scheduler3:7003
+    command:
+      - --worker-id=worker5
+      - --scheduler=scheduler3:7003
+      - --max-concurrency=4
+      - --log-level=info
+      - --log-format=console
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler3
+    restart: unless-stopped
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - scheduler-net
+    depends_on:
+      - scheduler1
+      - scheduler2
+      - scheduler3
+
+networks:
+  scheduler-net:
+    driver: bridge
+
+volumes:
+  scheduler1-data:
+  scheduler2-data:
+  scheduler3-data:
+  prometheus-data:

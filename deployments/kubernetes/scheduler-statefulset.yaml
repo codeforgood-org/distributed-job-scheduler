@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+  labels:
+    app: distributed-scheduler
+spec:
+  clusterIP: None
+  selector:
+    app: distributed-scheduler
+    component: scheduler
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+    - name: raft
+      port: 9001
+      targetPort: 9001
+    - name: grpc
+      port: 7001
+      targetPort: 7001
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: scheduler
+  labels:
+    app: distributed-scheduler
+    component: scheduler
+spec:
+  serviceName: scheduler
+  replicas: 3
+  selector:
+    matchLabels:
+      app: distributed-scheduler
+      component: scheduler
+  template:
+    metadata:
+      labels:
+        app: distributed-scheduler
+        component: scheduler
+    spec:
+      containers:
+        - name: scheduler
+          image: distributed-scheduler:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8001
+              name: http
+            - containerPort: 9001
+              name: raft
+            - containerPort: 7001
+              name: grpc
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - /app/scheduler
+            - --node-id=$(POD_NAME)
+            - --http-addr=:8001
+            - --raft-addr=:9001
+            - --grpc-addr=:7001
+            - --data-dir=/data
+            - --log-level=info
+            - --log-format=json
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-lb
+  labels:
+    app: distributed-scheduler
+spec:
+  type: LoadBalancer
+  selector:
+    app: distributed-scheduler
+    component: scheduler
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8001
+    - name: grpc
+      port: 7001
+      targetPort: 7001

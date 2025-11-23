@@ -1,0 +1,47 @@
+# Distributed Job Scheduler Configuration
+
+# Node configuration
+node:
+  id: "scheduler1"
+  data_dir: "./data"
+
+# HTTP API configuration
+http:
+  addr: ":8001"
+  read_timeout: 30s
+  write_timeout: 30s
+
+# gRPC configuration
+grpc:
+  addr: ":7001"
+
+# Raft consensus configuration
+raft:
+  addr: ":9001"
+  bootstrap: true
+  join_addr: ""
+
+# Scheduler configuration
+scheduler:
+  task_timeout: 300s
+  worker_timeout: 30s
+  max_retries: 3
+  schedule_interval: 1s
+  health_check_interval: 10s
+
+# Storage configuration
+storage:
+  backend: "badger"
+  path: "./data/tasks"
+  gc_interval: 300s
+
+# Logging configuration
+logging:
+  level: "info"  # debug, info, warn, error
+  format: "json" # json, console
+  output: "stdout"
+
+# Metrics configuration
+metrics:
+  enabled: true
+  path: "/metrics"

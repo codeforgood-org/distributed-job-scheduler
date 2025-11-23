@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/codeforgood-org/distributed-job-scheduler/pkg/proto";
+
+// SchedulerService defines the gRPC service for scheduler-worker communication
+service SchedulerService {
+  // Worker registers with the scheduler
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+
+  // Worker sends heartbeat to scheduler
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Worker reports task completion
+  rpc ReportTaskComplete(TaskCompleteRequest) returns (TaskCompleteResponse);
+
+  // Worker reports task failure
+  rpc ReportTaskFailure(TaskFailureRequest) returns (TaskFailureResponse);
+
+  // Worker deregisters from scheduler
+  rpc DeregisterWorker(DeregisterWorkerRequest) returns (DeregisterWorkerResponse);
+}
+
+// WorkerService defines the gRPC service for worker operations
+service WorkerService {
+  // Scheduler assigns task to worker
+  rpc AssignTask(AssignTaskRequest) returns (AssignTaskResponse);
+
+  // Scheduler cancels a task on worker
+  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
+
+  // Scheduler checks worker health
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message RegisterWorkerRequest {
+  string worker_id = 1;
+  string address = 2;
+  repeated string capabilities = 3;
+  int32 max_concurrency = 4;
+  map<string, string> metadata = 5;
+}
+
+message RegisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+  string scheduler_id = 3;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  int32 current_tasks = 2;
+  double cpu_usage = 3;
+  double memory_usage = 4;
+  map<string, string> metrics = 5;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+  repeated string tasks_to_cancel = 2;
+}
+
+message TaskCompleteRequest {
+  string task_id = 1;
+  string worker_id = 2;
+  bytes result = 3;
+  int64 duration_ms = 4;
+}
+
+message TaskCompleteResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message TaskFailureRequest {
+  string task_id = 1;
+  string worker_id = 2;
+  string error = 3;
+  bool retry = 4;
+}
+
+message TaskFailureResponse {
+  bool success = 1;
+  string message = 2;
+  bool should_retry = 3;
+  int32 retry_delay_seconds = 4;
+}
+
+message DeregisterWorkerRequest {
+  string worker_id = 1;
+  string reason = 2;
+}
+
+message DeregisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message AssignTaskRequest {
+  string task_id = 1;
+  string name = 2;
+  string type = 3;
+  bytes payload = 4;
+  int32 timeout_seconds = 5;
+  map<string, string> metadata = 6;
+}
+
+message AssignTaskResponse {
+  bool accepted = 1;
+  string message = 2;
+}
+
+message CancelTaskRequest {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message CancelTaskResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HealthCheckRequest {
+  string scheduler_id = 1;
+}
+
+message HealthCheckResponse {
+  bool healthy = 1;
+  int32 current_tasks = 2;
+  double health_score = 3;
+  map<string, string> metrics = 4;
+}
