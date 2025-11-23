@@ -1,0 +1,101 @@
+{
+  "dashboard": {
+    "title": "Distributed Scheduler - Worker Details",
+    "tags": ["scheduler", "workers"],
+    "timezone": "browser",
+    "templating": {
+      "list": [
+        {
+          "name": "worker",
+          "type": "query",
+          "label": "Worker",
+          "query": "label_values(worker_health_score, worker_id)",
+          "multi": false,
+          "includeAll": false
+        }
+      ]
+    },
+    "panels": [
+      {
+        "title": "Worker Status",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 4},
+        "targets": [{
+          "expr": "worker_health_score{worker_id=\"$worker\"}",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 50, "color": "yellow"},
+                {"value": 80, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Tasks Processed",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(worker_tasks_processed_total{worker_id=\"$worker\", status=\"completed\"}[5m])",
+            "refId": "A",
+            "legendFormat": "Completed"
+          },
+          {
+            "expr": "rate(worker_tasks_processed_total{worker_id=\"$worker\", status=\"failed\"}[5m])",
+            "refId": "B",
+            "legendFormat": "Failed"
+          }
+        ]
+      },
+      {
+        "title": "Task Success Rate",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 4, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "sum(worker_tasks_processed_total{worker_id=\"$worker\", status=\"completed\"}) / sum(worker_tasks_processed_total{worker_id=\"$worker\"}) * 100",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "title": "Current Load",
+        "type": "gauge",
+        "gridPos": {"x": 6, "y": 4, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "worker_current_tasks{worker_id=\"$worker\"} / worker_max_concurrency{worker_id=\"$worker\"} * 100",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "red"}
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "refresh": "5s",
+    "schemaVersion": 30,
+    "version": 1
+  }
+}

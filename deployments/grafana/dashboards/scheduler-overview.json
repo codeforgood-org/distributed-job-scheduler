@@ -1,0 +1,177 @@
+{
+  "dashboard": {
+    "title": "Distributed Scheduler - Overview",
+    "tags": ["scheduler", "distributed-systems"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Total Tasks",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "sum(scheduler_tasks_total)",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"value": null, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Success Rate",
+        "type": "gauge",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "sum(scheduler_tasks_total{status=\"completed\"}) / sum(scheduler_tasks_total) * 100",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 80, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Active Workers",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "scheduler_workers_active",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "title": "Queue Depth",
+        "type": "graph",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+        "targets": [{
+          "expr": "scheduler_queue_depth",
+          "refId": "A",
+          "legendFormat": "{{status}}"
+        }],
+        "yaxes": [{
+          "label": "Tasks",
+          "format": "short"
+        }]
+      },
+      {
+        "title": "Tasks by Status",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+        "targets": [{
+          "expr": "scheduler_tasks_total",
+          "refId": "A",
+          "legendFormat": "{{status}}"
+        }]
+      },
+      {
+        "title": "Task Duration (p95)",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+        "targets": [{
+          "expr": "histogram_quantile(0.95, rate(scheduler_task_duration_seconds_bucket[5m]))",
+          "refId": "A",
+          "legendFormat": "{{type}}"
+        }],
+        "yaxes": [{
+          "label": "Duration",
+          "format": "s"
+        }]
+      },
+      {
+        "title": "Tasks Per Second",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+        "targets": [{
+          "expr": "rate(scheduler_tasks_total[1m])",
+          "refId": "A",
+          "legendFormat": "{{status}}"
+        }],
+        "yaxes": [{
+          "label": "Tasks/sec",
+          "format": "short"
+        }]
+      },
+      {
+        "title": "Worker Health Scores",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+        "targets": [{
+          "expr": "worker_health_score",
+          "refId": "A",
+          "legendFormat": "{{worker_id}}"
+        }],
+        "yaxes": [{
+          "label": "Health Score",
+          "format": "short",
+          "min": 0,
+          "max": 100
+        }]
+      },
+      {
+        "title": "Leader Elections",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 20, "w": 8, "h": 4},
+        "targets": [{
+          "expr": "scheduler_leader_elections_total",
+          "refId": "A"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 5, "color": "yellow"},
+                {"value": 10, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "gridPos": {"x": 8, "y": 20, "w": 8, "h": 4},
+        "targets": [{
+          "expr": "rate(http_requests_total[1m])",
+          "refId": "A",
+          "legendFormat": "{{method}} {{path}}"
+        }]
+      },
+      {
+        "title": "Task Retries",
+        "type": "graph",
+        "gridPos": {"x": 16, "y": 20, "w": 8, "h": 4},
+        "targets": [{
+          "expr": "rate(scheduler_task_retries_total[5m])",
+          "refId": "A",
+          "legendFormat": "{{type}}"
+        }]
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 30,
+    "version": 1
+  }
+}

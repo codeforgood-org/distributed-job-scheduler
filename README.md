@@ -16,10 +16,24 @@ A production-ready distributed task scheduler built in Go, featuring Raft-based 
 - **High Availability**: Multi-node cluster with automatic failover
 - **Horizontal Scalability**: Add schedulers and workers dynamically
 - **Persistent Storage**: BadgerDB for local state, Raft log for consensus
-- **Monitoring**: Prometheus metrics, health endpoints, structured logging
+- **Monitoring**: Prometheus metrics, Grafana dashboards, health endpoints, structured logging
 - **Graceful Shutdown**: Clean resource cleanup and task handoff
 - **RESTful API**: Complete API for task management
-- **Web Dashboard**: Real-time monitoring UI
+- **Web Dashboard**: Real-time monitoring UI with live updates
+- **Authentication**: JWT and API key support with RBAC
+- **Webhooks**: Event-driven notifications for task lifecycle
+- **Circuit Breakers**: Automatic failure detection and recovery
+- **CLI Tool**: Command-line interface for task management
+
+### Advanced Features
+- **Workflow Engine**: DAG-based task workflows with dependencies
+- **Multi-Language SDKs**: Python, TypeScript/JavaScript clients
+- **Role-Based Access Control**: Fine-grained permissions (admin, operator, viewer)
+- **Webhook Notifications**: HTTP callbacks for task events
+- **Rate Limiting**: Per-user/namespace request throttling
+- **Audit Logging**: Complete audit trail of all operations
+- **Circuit Breakers**: Resilience patterns for external dependencies
+- **Task Workflows**: Complex DAG workflows with visual representation
 
 ### Task Features
 - Priority-based scheduling (1-10)
@@ -29,6 +43,9 @@ A production-ready distributed task scheduler built in Go, featuring Raft-based 
 - Rate limiting per task type
 - Multi-tenancy with namespaces
 - Custom task metadata and tags
+- Cron-style scheduled tasks
+- Task templates and composition
+- Event-driven task triggers
 
 ## 📋 Architecture
 
